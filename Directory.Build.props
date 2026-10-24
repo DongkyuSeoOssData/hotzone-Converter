@@ -7,4 +7,9 @@
     <!-- Windows 전용 프로젝트도 Linux/macOS CI에서 빌드되도록 -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
+  <!-- 버전 번호는 여기 한 곳에만 둔다. 앱 화면·로그·릴리스 태그가 모두 이 값을 쓴다. -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Product>Hotzone Converter</Product>
+  </PropertyGroup>
 </Project>

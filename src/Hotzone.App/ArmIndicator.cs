@@ -29,6 +29,15 @@ public sealed class ArmIndicator : Window
         _follow.Tick += (_, _) => Follow();
     }
 
+    /// <summary>첫 무장 때 창을 처음 만드느라 늦어지지 않게 투명하게 한 번 띄웠다 숨긴다.</summary>
+    public void Prewarm()
+    {
+        Opacity = 0;
+        Show();
+        Hide();
+        Opacity = 1;
+    }
+
     public void SetArmed(bool armed)
     {
         if (armed)

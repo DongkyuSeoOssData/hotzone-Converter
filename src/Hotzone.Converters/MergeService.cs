@@ -12,7 +12,7 @@ public static class MergeService
     public static bool CanMerge(IReadOnlyCollection<string> formats) =>
         formats.Count >= 2 && formats.All(f => f == "pdf" || ImageFormats.Contains(f));
 
-    public static string MergeToPdf(IReadOnlyList<string> files)
+    public static string MergeToPdf(IReadOnlyList<string> files, IProgress<double>? progress = null)
     {
         var first = files[0];
         var dest = OutputWriter.UniquePath(Path.Combine(
@@ -22,8 +22,9 @@ public static class MergeService
 
         using (var output = new PdfDocument())
         {
-            foreach (var file in files)
+            for (var i = 0; i < files.Count; i++)
             {
+                var file = files[i];
                 if (Formats.Detect(file) == "pdf")
                 {
                     using var input = PdfReader.Open(file, PdfDocumentOpenMode.Import);
@@ -33,6 +34,7 @@ public static class MergeService
                 {
                     ImageToPdfConverter.AddImagePage(output, file);
                 }
+                progress?.Report((i + 1.0) / files.Count);
             }
             output.Save(temp);
         }

@@ -5,6 +5,7 @@ public static class Requirements
 {
     public const string Office = "Office";
     public const string LibreOffice = "LibreOffice";
+    public const string FFmpeg = "FFmpeg";
 
     public static bool IsMet(string name) => name switch
     {
@@ -13,6 +14,7 @@ public static class Requirements
             && Type.GetTypeFromProgID("PowerPoint.Application") is not null
             && Type.GetTypeFromProgID("Excel.Application") is not null,
         LibreOffice => LibreOfficeConverter.FindSoffice() is not null,
+        FFmpeg => MediaConverter.FindFfmpeg() is not null,
         _ => false,
     };
 }

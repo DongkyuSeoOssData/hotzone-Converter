@@ -11,6 +11,8 @@ GetClassName
 GetWindowLong
 SetWindowLong
 GetCursorPos
+SetWindowPos
+GetWindowRect
 SHQueryUserNotificationState
 KBDLLHOOKSTRUCT
 MSLLHOOKSTRUCT

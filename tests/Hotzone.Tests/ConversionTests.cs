@@ -52,6 +52,51 @@ public class ConversionTests
         Assert.Equal(["img0_merged_01.png", "img0_merged_02.png"], Directory.GetFiles(dest).Select(Path.GetFileName).Order());
     }
 
+    private sealed class Collect : IProgress<double>
+    {
+        public List<double> Values { get; } = [];
+        public void Report(double value) { lock (Values) Values.Add(value); }
+    }
+
+    [Fact]
+    public async Task Progress_rises_to_one_across_pages()
+    {
+        using var dir = new TempDir();
+        var pdf = MergeService.MergeToPdf([MakePng(dir.Path, "a.png"), MakePng(dir.Path, "b.png", 50), MakePng(dir.Path, "c.png", 90)]);
+        var progress = new Collect();
+
+        await Queue.ConvertAsync(pdf, "png", progress: progress);
+
+        Assert.True(progress.Values.Count >= 3);
+        Assert.Equal(progress.Values.Order(), progress.Values); // 줄어들지 않는다
+        Assert.Equal(1.0, progress.Values[^1], 3);
+    }
+
+    [Fact]
+    public void Zip_reports_progress_per_entry()
+    {
+        using var dir = new TempDir();
+        var progress = new Collect();
+
+        FileTools.Zip([dir.File("1.txt", [1]), dir.File("2.txt", [2])], progress);
+
+        Assert.Equal([0.5, 1.0], progress.Values);
+    }
+
+    [Fact]
+    public async Task Korean_named_pdf_to_jpeg()
+    {
+        using var dir = new TempDir();
+        var merged = MergeService.MergeToPdf([MakePng(dir.Path, "p.png")]);
+        var pdf = Path.Combine(dir.Sub("한글 폴더"), "보고서.pdf");
+        File.Move(merged, pdf);
+
+        var dest = await Queue.ConvertAsync(pdf, "jpeg");
+
+        Assert.Equal(Path.Combine(Path.GetDirectoryName(pdf)!, "보고서.jpg"), dest);
+        Assert.Equal("jpeg", Formats.Detect(dest));
+    }
+
     [Fact]
     public async Task Webp_to_pdf()
     {

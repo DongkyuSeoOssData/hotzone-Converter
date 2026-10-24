@@ -6,3 +6,13 @@ obj/
 TestResults/
 publish/
 tools/ffmpeg/*.exe
+
+# 배포 결과물: Releases에 올림
+dist/
+
+# 사용자 데이터·로컬 설정
+settings.json
+*.log
+
+# 개인 작업용 문서
+docs/RELEASE_GUIDE.md

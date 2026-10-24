@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 using Hotzone.Interop;
 
 namespace Hotzone.App;
@@ -11,7 +12,8 @@ namespace Hotzone.App;
 public partial class HotzoneWindow : Window
 {
     private const double Thickness = 4;
-    private const double HeightRatio = 0.4;
+    private const double LengthRatio = 0.4;
+    private const double CornerSize = 16;
 
     private readonly Func<bool> _isArmed;
     private nint _hwnd;
@@ -26,26 +28,52 @@ public partial class HotzoneWindow : Window
     {
         _isArmed = isArmed;
         InitializeComponent();
-        Place();
         SourceInitialized += (_, _) =>
         {
             _hwnd = new WindowInteropHelper(this).Handle;
             WindowStyles.MakeOverlay(_hwnd, clickThrough: true);
         };
+        DpiChanged += (_, _) => Place();
         DragEnter += OnDrag;
         DragOver += OnDrag;
         DragLeave += (_, _) => { DragInside = null; DragLeft?.Invoke(); };
         Drop += (_, e) => { DragInside = null; e.Effects = DragDropEffects.None; e.Handled = true; };
     }
 
-    /// <summary>기본 위치: 주 모니터 오른쪽 가장자리 세로 중앙. TODO: 다중 모니터, 작업 표시줄 회피.</summary>
-    private void Place()
+    public AppSettings Settings { get; set; } = new();
+
+    /// <summary>
+    /// 설정한 모니터·위치에 붙인다 (Show 뒤, 설정·화면 구성이 바뀔 때 호출).
+    /// 가장자리는 두께 4 × 길이 40% 띠, 구석은 작은 정사각형.
+    /// </summary>
+    public void Place()
     {
-        var area = SystemParameters.WorkArea;
-        Width = Thickness;
-        Height = area.Height * HeightRatio;
-        Left = area.Right - Thickness;
-        Top = area.Top + (area.Height - Height) / 2;
+        if (_hwnd == 0) return;
+        var bounds = Edge.Screen(Settings.Monitor).Bounds;
+        var position = Settings.Position;
+        // 먼저 1px로 줄여 대상 모니터 중앙에 둔다 (가장자리에 두면 옆 모니터 DPI로 판정될 수 있다).
+        // DPI 변경은 비동기로 늦게 올 수 있어서 DpiChanged에서 다시 부른다.
+        // 크기는 WPF(DIP)에 맡기고 (픽셀로 직접 주면 WPF가 배율로 한 번 더 나눈다) 위치만 실제 크기 기준 픽셀로 맞춘다
+        WindowStyles.Move(_hwnd, bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2, 1, 1);
+        var scale = VisualTreeHelper.GetDpi(this);
+        if (Edge.IsCorner(position))
+        {
+            Width = Height = CornerSize;
+        }
+        else if (position is HotzonePosition.Left or HotzonePosition.Right)
+        {
+            Width = Thickness;
+            Height = bounds.Height * LengthRatio / scale.DpiScaleY;
+        }
+        else
+        {
+            Width = bounds.Width * LengthRatio / scale.DpiScaleX;
+            Height = Thickness;
+        }
+        UpdateLayout();
+        var (left, top, right, bottom) = WindowStyles.Bounds(_hwnd);
+        var at = Edge.Clamp(bounds, Edge.Anchor(bounds, position), right - left, bottom - top);
+        WindowStyles.Move(_hwnd, at.X, at.Y);
     }
 
     public void SetClickThrough(bool enabled)
@@ -54,6 +82,8 @@ public partial class HotzoneWindow : Window
         // 전체 화면 앱 위에서는 계속 클릭 통과로 둬서 핫존을 사실상 끈다
         if (!enabled && WindowStyles.IsFullscreenAppRunning()) return;
         WindowStyles.SetClickThrough(_hwnd, enabled);
+        // 아래쪽 가장자리 등에서 작업 표시줄(역시 최상단)에 가리지 않게 드래그 시작마다 맨 위로 올린다
+        if (!enabled) WindowStyles.BringToTop(_hwnd);
     }
 
     private void OnDrag(object sender, DragEventArgs e)

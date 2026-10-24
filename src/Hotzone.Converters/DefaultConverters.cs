@@ -8,7 +8,10 @@ public static class DefaultConverters
         new ConverterRegistry(Requirements.IsMet)
             .Register(new ImageConverter())
             .Register(new ImageToPdfConverter())
+            .Register(new IcoConverter())
             .Register(new PdfRenderConverter())
+            .Register(new PdfTextConverter())
+            .Register(new MediaConverter())
             .Register(new OfficeComConverter())
             .Register(new LibreOfficeConverter());
 }
