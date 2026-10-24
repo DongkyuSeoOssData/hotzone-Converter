@@ -1,0 +1,8 @@
+<Window x:Class="Hotzone.App.HotzoneWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" AllowsTransparency="True" ResizeMode="NoResize"
+        Topmost="True" ShowInTaskbar="False" ShowActivated="False" Focusable="False"
+        AllowDrop="True"
+        Background="#01000000" />
+<!-- 완전 투명이면 히트 테스트가 안 돼서 드롭을 못 받는다 → 알파 1/255 -->

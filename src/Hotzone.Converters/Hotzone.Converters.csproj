@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Hotzone.Core\Hotzone.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NetVips" Version="3.2.0" />
+    <PackageReference Include="NetVips.Native" Version="8.18.7" />
+    <PackageReference Include="PDFiumCore" Version="157.0.8100" />
+    <!-- 6.3+ 는 AGPL로 바뀜. 설계상 AGPL 회피 → 마지막 MIT 버전에 고정 -->
+    <PackageReference Include="PDFsharp" Version="[6.2.4]" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
