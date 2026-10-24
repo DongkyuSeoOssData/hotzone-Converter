@@ -52,7 +52,7 @@ public static class OutputWriter
         return destDir;
     }
 
-    private static void MoveDirectory(string from, string to)
+    public static void MoveDirectory(string from, string to)
     {
         try
         {

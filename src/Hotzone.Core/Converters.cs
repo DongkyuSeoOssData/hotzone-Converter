@@ -11,6 +11,9 @@ public sealed class ConvertsAttribute(string spec) : Attribute
     public int Cost { get; init; } = 1;
     public string? Requires { get; init; }
 
+    /// <summary>false면 이 간선의 결과를 다음 단계에 넘기지 않는다 (2단계 체인의 첫 단계 금지).</summary>
+    public bool Chainable { get; init; } = true;
+
     public (string[] From, string[] To) Parse()
     {
         var parts = Spec.Split("->", 2, StringSplitOptions.TrimEntries);
@@ -39,4 +42,4 @@ public sealed record ConversionRequest(
 /// <summary>순서가 곧 페이지 순서.</summary>
 public sealed record ConversionResult(IReadOnlyList<string> Files);
 
-public sealed record Edge(string From, string To, int Cost, IConverter Converter);
+public sealed record Edge(string From, string To, int Cost, IConverter Converter, bool Chainable = true);

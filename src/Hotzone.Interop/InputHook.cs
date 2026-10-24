@@ -35,6 +35,10 @@ public sealed unsafe class InputHook : IDisposable
 
     public event Action<bool>? LeftButtonChanged;
     public event Action<bool>? ArmedChanged;
+    /// <summary>드래그 중 스페이스를 새로 누를 때마다 (자동 반복 제외). 이미 무장돼 있어도 발생한다.</summary>
+    public event Action? SpaceTapped;
+    /// <summary>드래그 중 스페이스를 눌렀지만 무시한 이유 (진단용, 예: 허용되지 않은 포그라운드 창).</summary>
+    public event Action<string>? SpaceIgnored;
 
     public InputHook(IEnumerable<string>? allowedClasses = null)
     {
@@ -129,11 +133,17 @@ public sealed unsafe class InputHook : IDisposable
             }
             else if (info->vkCode == VK_SPACE && ((uint)info->flags & LLKHF_INJECTED) == 0)
             {
-                if (down && self._buttonDown && self._allowedClasses.Contains(ForegroundClass()))
+                if (down && self._buttonDown && !self._swallowingSpace)
                 {
-                    self.SetArmed(true);
-                    self._swallowingSpace = true;
-                    return (LRESULT)1;
+                    var foreground = ForegroundClass();
+                    if (self._allowedClasses.Contains(foreground))
+                    {
+                        self.SetArmed(true);
+                        self._swallowingSpace = true;
+                        self.SpaceTapped?.Invoke();
+                        return (LRESULT)1;
+                    }
+                    self.SpaceIgnored?.Invoke($"포그라운드 창 '{foreground}'은 허용 목록에 없음");
                 }
                 if (self._swallowingSpace)
                 {

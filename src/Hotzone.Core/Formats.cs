@@ -13,6 +13,12 @@ public static class Formats
     // OOXML(docx/pptx/xlsx)은 모두 ZIP이라 시그니처만으로 구분이 안 된다
     private static readonly HashSet<string> Ooxml = ["docx", "pptx", "xlsx"];
 
+    /// <summary>libvips로 읽을 수 있는 이미지 (HEIC는 디코더가 없으면 변환 시 실패할 수 있다).</summary>
+    public static readonly IReadOnlySet<string> Images =
+        new HashSet<string> { "jpeg", "png", "webp", "heic", "avif", "tiff", "gif", "bmp", "svg" };
+
+    public static bool IsImage(string format) => Images.Contains(format);
+
     public static string Normalize(string extension)
     {
         var ext = extension.TrimStart('.').ToLowerInvariant();
@@ -26,7 +32,16 @@ public static class Formats
     {
         if (head.StartsWith(new byte[] { 0xFF, 0xD8, 0xFF })) return "jpeg";
         if (head.StartsWith(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A })) return "png";
-        if (head.Length >= 12 && head[..4].SequenceEqual("RIFF"u8) && head[8..12].SequenceEqual("WEBP"u8)) return "webp";
+        if (head.Length >= 12 && head[..4].SequenceEqual("RIFF"u8))
+        {
+            if (head[8..12].SequenceEqual("WEBP"u8)) return "webp";
+            if (head[8..12].SequenceEqual("WAVE"u8)) return "wav";
+            if (head[8..12].SequenceEqual("AVI "u8)) return "avi";
+        }
+        if (head.StartsWith(new byte[] { 0x1A, 0x45, 0xDF, 0xA3 })) return "mkv"; // EBML (webm은 확장자로 구분)
+        if (head.StartsWith("fLaC"u8)) return "flac";
+        if (head.StartsWith("OggS"u8)) return "ogg";
+        if (head.StartsWith("ID3"u8) || (head.Length >= 2 && head[0] == 0xFF && (head[1] & 0xE0) == 0xE0)) return "mp3";
         if (head.StartsWith("%PDF-"u8)) return "pdf";
         if (head.StartsWith("GIF87a"u8) || head.StartsWith("GIF89a"u8)) return "gif";
         if (head.StartsWith("BM"u8)) return "bmp";
@@ -38,6 +53,8 @@ public static class Formats
             {
                 "heic" or "heix" or "hevc" or "hevx" or "mif1" or "msf1" => "heic",
                 "avif" or "avis" => "avif",
+                "qt  " => "mov",
+                "M4A " or "M4B " => "m4a",
                 _ => "mp4",
             };
         }
@@ -62,6 +79,9 @@ public static class Formats
         var sniffed = Sniff(head[..read]);
         if (sniffed is null) return hint;
         if (sniffed == "zip" && Ooxml.Contains(hint)) return hint;
+        if (sniffed == "mkv" && hint == "webm") return hint;
+        // JPEG 시그니처(FF D8 FF)가 MP3 프레임 동기 비트와 겹치므로 MP3 판정은 확장자가 맞을 때만 믿는다
+        if (sniffed == "mp3" && hint != "mp3" && head[0] == 0xFF) return hint;
         return sniffed;
     }
 }

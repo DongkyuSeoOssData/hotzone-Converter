@@ -24,6 +24,25 @@ public static class WindowStyles
         PInvoke.SetWindowLong(h, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE, (int)style);
     }
 
+    /// <summary>물리 픽셀로 창을 옮긴다. 크기를 안 주면 위치만 바꾼다.</summary>
+    public static void Move(nint hwnd, int x, int y, int? width = null, int? height = null)
+    {
+        var flags = SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE;
+        if (width is null || height is null) flags |= SET_WINDOW_POS_FLAGS.SWP_NOSIZE;
+        PInvoke.SetWindowPos((HWND)hwnd, HWND.Null, x, y, width ?? 0, height ?? 0, flags);
+    }
+
+    /// <summary>최상단 창들 중에서도 맨 위로 (활성화하지 않음).</summary>
+    public static void BringToTop(nint hwnd) =>
+        PInvoke.SetWindowPos((HWND)hwnd, (HWND)(-1) /* HWND_TOPMOST */, 0, 0, 0, 0,
+            SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_NOSIZE | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE);
+
+    public static (int Left, int Top, int Right, int Bottom) Bounds(nint hwnd)
+    {
+        PInvoke.GetWindowRect((HWND)hwnd, out var r);
+        return (r.left, r.top, r.right, r.bottom);
+    }
+
     public static (int X, int Y) CursorPosition()
     {
         PInvoke.GetCursorPos(out var p);

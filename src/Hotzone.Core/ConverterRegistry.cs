@@ -28,7 +28,7 @@ public sealed class ConverterRegistry
                 if (f == t) continue;
                 // 같은 간선에 변환기가 여럿이면 Cost가 낮은 쪽 우선 (Office COM > LibreOffice)
                 if (!_edges.TryGetValue((f, t), out var existing) || attr.Cost < existing.Cost)
-                    _edges[(f, t)] = new Edge(f, t, attr.Cost, converter);
+                    _edges[(f, t)] = new Edge(f, t, attr.Cost, converter, attr.Chainable);
             }
         }
         return this;
@@ -48,7 +48,7 @@ public sealed class ConverterRegistry
         }
         foreach (var first in Outgoing(from))
         {
-            if (first.To == to) continue;
+            if (first.To == to || !first.Chainable) continue;
             if (_edges.TryGetValue((first.To, to), out var second) && first.Cost + second.Cost < bestCost)
             {
                 best = [first, second];
@@ -64,6 +64,7 @@ public sealed class ConverterRegistry
         foreach (var first in Outgoing(from))
         {
             result.Add(first.To);
+            if (!first.Chainable) continue;
             foreach (var second in Outgoing(first.To)) result.Add(second.To);
         }
         result.Remove(from);
