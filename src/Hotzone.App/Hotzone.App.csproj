@@ -10,10 +10,14 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
     <AssemblyName>HotzoneConverter</AssemblyName>
     <RootNamespace>Hotzone.App</RootNamespace>
+    <!-- DPI는 WPF 방식대로 app.manifest(PerMonitorV2)에서 설정. WinForms 경고는 트레이 아이콘만 쓰므로 무시 -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Using Remove="System.Windows.Forms" />
     <Using Remove="System.Drawing" />
+    <!-- WPF는 System.Windows.Shapes.Path와 충돌을 피하려고 System.IO를 기본 using에서 뺀다 -->
+    <Using Include="System.IO" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Hotzone.Core\Hotzone.Core.csproj" />
