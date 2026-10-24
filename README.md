@@ -101,7 +101,7 @@ Windows용 로컬 파일 변환 유틸리티. 탐색기에서 파일을 끌다�
 - **FFmpeg는 LGPL 빌드만** 쓰고, 별도 프로그램으로 실행만 합니다 (교체 가능).
 - **H.264·AAC 인코딩은 Windows 내장 인코더만** 씁니다 (특허 라이선스가 Windows에 포함). x264·OpenH264 등은 쓰지 않습니다.
 - PDFsharp는 6.2.4(MIT)에 고정합니다 (6.3부터 AGPL). Ghostscript(AGPL)는 쓰지 않습니다.
-- Hotzone Converter 자체의 라이선스: *(정하지 않음 — 공개 배포 전에 LICENSE 파일 추가 필요)*
+- Hotzone Converter 자체: [MIT 라이선스](LICENSE) © 2026 ADER. 함께 배포하는 FFmpeg·libvips 등은 각자의 라이선스를 따릅니다.
 
 ## 개발
 

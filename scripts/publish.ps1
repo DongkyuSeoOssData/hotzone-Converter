@@ -29,7 +29,7 @@ if ($LASTEXITCODE -ne 0) { throw "publish 실패" }
 $tools = New-Item -ItemType Directory -Force (Join-Path $app "tools\ffmpeg")
 Copy-Item $ffmpeg $tools
 $licenses = New-Item -ItemType Directory -Force (Join-Path $app "licenses")
-Copy-Item THIRD_PARTY_NOTICES.md $app
+Copy-Item LICENSE, THIRD_PARTY_NOTICES.md $app
 if (Test-Path (Join-Path $FfmpegDir "LICENSE.txt")) { Copy-Item (Join-Path $FfmpegDir "LICENSE.txt") (Join-Path $licenses "FFmpeg-LICENSE.txt") }
 $vipsNotice = Get-ChildItem "$env:USERPROFILE\.nuget\packages\netvips.native.win-x64" -Recurse -Filter THIRD-PARTY-NOTICES.md | Select-Object -First 1
 if ($vipsNotice) { Copy-Item $vipsNotice.FullName (Join-Path $licenses "libvips-THIRD-PARTY-NOTICES.md") }
