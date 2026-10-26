@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using System.Text;
 using Hotzone.Converters;
 using Hotzone.Core;
@@ -102,6 +104,54 @@ public class ReproTests(ITestOutputHelper log)
 
         Assert.Equal(["보고서.txt"], Directory.GetFiles(folder).Select(Path.GetFileName));
     }
+
+    /// <summary>
+    /// CP949 이름 중 일부만 우연히 올바른 UTF-8이어도(<c>짤</c> = C2 A9 = UTF-8 <c>©</c>) ZIP 전체를 같은 인코딩으로 읽어
+    /// 같은 폴더가 둘로 갈라지지 않는다 (교차 리뷰 Codex 1번).
+    /// </summary>
+    [Fact]
+    public void Cp949_folder_is_not_split_by_accidental_utf8()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        using var dir = new TempDir();
+        var zip = Path.Combine(dir.Path, "짤방.zip");
+        using (var archive = new ZipArchive(File.Create(zip), ZipArchiveMode.Create, leaveOpen: false, Encoding.GetEncoding(949)))
+        {
+            foreach (var name in new[] { "짤/a.txt", "짤/보고서.txt" })
+            {
+                using var writer = new StreamWriter(archive.CreateEntry(name).Open());
+                writer.Write("x");
+            }
+        }
+
+        var folder = FileTools.Unzip(zip, Encoding.GetEncoding(949));
+
+        Assert.Equal(["짤"], Directory.GetDirectories(folder).Select(Path.GetFileName));
+        Assert.Equal(["a.txt", "보고서.txt"], Directory.GetFiles(Path.Combine(folder, "짤")).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>기본 코드 페이지는 현재 문화권이 아니라 Windows 시스템 OEM 값을 따른다 (교차 리뷰 Codex 2번).</summary>
+    [Fact]
+    public void System_oem_ignores_current_culture()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var system = (int)GetOEMCP();
+        var saved = CultureInfo.CurrentCulture;
+        // 시스템 OEM과 다른 OEM 코드 페이지를 가진 문화권으로 바꾼다
+        CultureInfo.CurrentCulture = new CultureInfo(system == 949 ? "en-US" : "ko-KR");
+        try
+        {
+            Assert.NotEqual(system, CultureInfo.CurrentCulture.TextInfo.OEMCodePage);
+            Assert.Equal(system, ZipNameEncoding.SystemOem().CodePage);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = saved;
+        }
+    }
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetOEMCP();
 
     /// <summary>첫 로컬 파일 헤더의 general purpose bit 11.</summary>
     private static bool HasUtf8Flag(string zip) => (BitConverter.ToUInt16(File.ReadAllBytes(zip), 6) & 0x800) != 0;

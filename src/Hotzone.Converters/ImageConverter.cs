@@ -15,8 +15,7 @@ public sealed class ImageConverter : IConverter
         {
             var output = Path.Combine(request.WorkDir,
                 Path.GetFileNameWithoutExtension(request.SourcePath) + "." + Formats.FileExtension(request.TargetFormat));
-            // 순차 접근으로 열면 EXIF 회전(Autorot)이 "out of order read"로 실패한다 (휴대폰 세로 사진)
-            using var image = Load(request.SourcePath);
+            using var image = LoadForConversion(request.SourcePath);
             using var ready = Prepare(image, request.TargetFormat);
             var quality = int.TryParse(request.Options.GetValueOrDefault("quality"), out var q) ? q : 92;
             switch (request.TargetFormat)
@@ -35,6 +34,19 @@ public sealed class ImageConverter : IConverter
     /// </summary>
     internal static VipsImage Load(string path, Enums.Access access = Enums.Access.Random) =>
         VipsImage.NewFromBuffer(File.ReadAllBytes(path), access: access);
+
+    /// <summary>
+    /// 보통은 순차 접근으로 열어 메모리를 아낀다 (임의 접근은 큰 JPEG에서 피크 메모리가 두 배 넘게 는다).
+    /// EXIF 회전이 있는 사진(휴대폰 세로 사진)은 순차 접근으로 열면 Autorot이 "out of order read"로 실패하므로 임의 접근으로 연다.
+    /// </summary>
+    internal static VipsImage LoadForConversion(string path)
+    {
+        var bytes = File.ReadAllBytes(path);
+        bool rotated;
+        using (var header = VipsImage.NewFromBuffer(bytes)) // 헤더만 읽는다 (픽셀은 디코딩하지 않음)
+            rotated = header.Contains("orientation") && header.Get("orientation") is int orientation && orientation > 1;
+        return VipsImage.NewFromBuffer(bytes, access: rotated ? Enums.Access.Random : Enums.Access.Sequential);
+    }
 
     /// <summary>JPEG은 알파가 없으니 흰 배경으로 평탄화한다.</summary>
     internal static VipsImage Prepare(VipsImage image, string targetFormat)
