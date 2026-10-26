@@ -5,6 +5,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Hotzone.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="NetVips" Version="3.2.0" />
     <PackageReference Include="NetVips.Native" Version="8.18.7" />
     <PackageReference Include="PDFiumCore" Version="157.0.8100" />

@@ -80,6 +80,8 @@ public static class Formats
         if (sniffed is null) return hint;
         if (sniffed == "zip" && Ooxml.Contains(hint)) return hint;
         if (sniffed == "mkv" && hint == "webm") return hint;
+        // 녹음 앱 등은 .m4a에도 범용 브랜드(isom, mp42 ...)를 써서 시그니처만으로는 영상과 구분이 안 된다
+        if (sniffed == "mp4" && hint == "m4a") return hint;
         // JPEG 시그니처(FF D8 FF)가 MP3 프레임 동기 비트와 겹치므로 MP3 판정은 확장자가 맞을 때만 믿는다
         if (sniffed == "mp3" && hint != "mp3" && head[0] == 0xFF) return hint;
         return sniffed;
