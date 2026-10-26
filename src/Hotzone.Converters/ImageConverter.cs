@@ -15,7 +15,8 @@ public sealed class ImageConverter : IConverter
         {
             var output = Path.Combine(request.WorkDir,
                 Path.GetFileNameWithoutExtension(request.SourcePath) + "." + Formats.FileExtension(request.TargetFormat));
-            using var image = Load(request.SourcePath, Enums.Access.Sequential);
+            // 순차 접근으로 열면 EXIF 회전(Autorot)이 "out of order read"로 실패한다 (휴대폰 세로 사진)
+            using var image = Load(request.SourcePath);
             using var ready = Prepare(image, request.TargetFormat);
             var quality = int.TryParse(request.Options.GetValueOrDefault("quality"), out var q) ? q : 92;
             switch (request.TargetFormat)

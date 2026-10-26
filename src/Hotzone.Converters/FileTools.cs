@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Text;
 using Hotzone.Core;
 using NetVips;
 using PdfSharp.Pdf;
@@ -77,8 +78,12 @@ public static class FileTools
 
     private static string EntryName(string root, string path) => Path.GetRelativePath(root, path).Replace('\\', '/');
 
-    /// <summary>ZIP을 원본 옆 <c>이름</c> 폴더에 푼다. 경로 탈출(../) 항목은 .NET이 막는다.</summary>
-    public static string Unzip(string zip)
+    /// <summary>
+    /// ZIP을 원본 옆 <c>이름</c> 폴더에 푼다. 경로 탈출(../) 항목은 .NET이 막는다.
+    /// UTF-8 플래그가 없는 항목 이름은 UTF-8로 읽히면 UTF-8, 아니면 <paramref name="legacyNames"/>로 읽는다
+    /// (기본: 시스템 OEM 코드 페이지. 한국어 Windows 탐색기가 만든 ZIP은 CP949).
+    /// </summary>
+    public static string Unzip(string zip, Encoding? legacyNames = null)
     {
         var full = Path.GetFullPath(zip);
         var dest = OutputWriter.UniquePath(
@@ -86,7 +91,7 @@ public static class FileTools
         var part = dest + ".part";
         try
         {
-            ZipFile.ExtractToDirectory(full, part);
+            ZipFile.ExtractToDirectory(full, part, new ZipNameEncoding(legacyNames ?? ZipNameEncoding.SystemOem()));
             Directory.Move(part, dest);
         }
         catch
