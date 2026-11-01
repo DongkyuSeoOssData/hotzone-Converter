@@ -16,6 +16,7 @@ internal static class PreviewRenderer
         {
             Save(Panel(PanelTheme.Get(kind)), Path.Combine(dir, $"panel_{kind}.png"));
             Save(Toasts(kind), Path.Combine(dir, $"toast_{kind}.png"));
+            Save(Wedge(kind), Path.Combine(dir, $"wedge_{kind}.png"));
         }
 
         Save(new Image { Source = TrayIcon.ImageSource, Width = 256, Height = 256 }, Path.Combine(dir, "icon.png"));
@@ -50,7 +51,7 @@ internal static class PreviewRenderer
 
     private static FrameworkElement Panel(PanelTheme theme)
     {
-        const double size = 460, c = size / 2, outer = 163, ring = 112, bubble = 66;
+        const double size = 460, c = size / 2, outer = 163;
         var canvas = new Canvas
         {
             Width = size, Height = size,
@@ -65,7 +66,6 @@ internal static class PreviewRenderer
             canvas.Children.Add(e);
         }
         Put(PanelArt.Disc(theme, outer), c, c);
-        Put(PanelArt.Hub(theme, 24), c, c);
         PanelController.Tile[] tiles =
         [
             new("jpeg", "JPG"), new("png", "PNG"), new("pdf", "PDF"), new("webp", "WebP"), new("mp4", "MP4"),
@@ -73,11 +73,13 @@ internal static class PreviewRenderer
         ];
         for (var i = 0; i < tiles.Length; i++)
         {
-            var parts = PanelArt.Bubble(theme, tiles[i], bubble);
+            var first = -Math.PI / 2 - Math.PI / tiles.Length;
+            var step = 2 * Math.PI / tiles.Length;
+            var parts = PanelArt.Sector(theme, tiles[i], outer, 46, outer, first + step * i, first + step * (i + 1));
             if (i == 1) parts.Highlight(theme, true);
-            var angle = -Math.PI / 2 + 2 * Math.PI * i / tiles.Length;
-            Put(parts.Root, c + Math.Cos(angle) * ring, c + Math.Sin(angle) * ring);
+            Put(parts.Root, c, c);
         }
+        Put(PanelArt.Hub(theme, 40), c, c);
         return canvas;
     }
 
@@ -95,6 +97,20 @@ internal static class PreviewRenderer
                 [new GradientStop(Color.FromRgb(0x5B, 0x8C, 0xFF), 0), new GradientStop(Color.FromRgb(0xB0, 0x6A, 0xF5), 0.55), new GradientStop(Color.FromRgb(0xFF, 0x9E, 0x6B), 1)],
                 new Point(0, 0), new Point(1, 1)),
             Child = card,
+        };
+    }
+
+    /// <summary>회전 묶음을 펼친 조각 + 목록.</summary>
+    private static FrameworkElement Wedge(PanelThemeKind kind)
+    {
+        var registry = new Hotzone.Core.ConverterRegistry(_ => false);
+        var panel = new PanelWindow(new PanelController(registry)) { Settings = new AppSettings { Theme = kind } };
+        return new Border
+        {
+            Background = new LinearGradientBrush(
+                [new GradientStop(Color.FromRgb(0x5B, 0x8C, 0xFF), 0), new GradientStop(Color.FromRgb(0xB0, 0x6A, 0xF5), 0.55), new GradientStop(Color.FromRgb(0xFF, 0x9E, 0x6B), 1)],
+                new Point(0, 0), new Point(1, 1)),
+            Child = panel.PreviewWedge(),
         };
     }
 

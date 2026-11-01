@@ -161,6 +161,7 @@ public partial class App : Application
                     PanelController.UnzipTile => await Task.Run(() => FileTools.Unzip(file)),
                     PanelController.ShrinkTile => await Task.Run(() => FileTools.Shrink(file)),
                     PanelController.SplitTile => await Task.Run(() => FileTools.SplitPdf(file, one)),
+                    _ when PanelController.TransformFor(target) is { } transform => await Task.Run(() => FileTools.Transform(file, transform)),
                     _ => await queue.ConvertAsync(file, target, progress: one),
                 };
                 Log.Info($"완료: {result}");
@@ -186,7 +187,7 @@ public partial class App : Application
         PanelController.UnzipTile => "압축 풀기",
         "jpeg" => "JPG 변환",
         "webp" => "WebP 변환",
-        _ => $"{target.ToUpperInvariant()} 변환",
+        _ => PanelController.TransformAction(target) ?? $"{target.ToUpperInvariant()} 변환",
     };
 
     private void OpenSettings(string page = "general")

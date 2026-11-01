@@ -7,6 +7,9 @@ using PdfSharp.Pdf.IO;
 
 namespace Hotzone.Converters;
 
+/// <summary>이미지 회전·반전. 회전 방향은 시계 방향 기준으로 오른쪽이다.</summary>
+public enum ImageTransform { RotateRight, RotateLeft, Rotate180, FlipHorizontal, FlipVertical }
+
 /// <summary>
 /// 형식 변환이 아닌 파일 도구: ZIP 압축·풀기, 용량 줄이기, PDF 나누기.
 /// 결과는 항상 원본 옆에 새로 만들고(원본 수정 없음), 이름이 겹치면 <c>(1)</c>을 붙인다.
@@ -16,6 +19,9 @@ public static class FileTools
 {
     /// <summary>용량 줄이기를 지원하는 형식 (같은 형식으로 다시 저장).</summary>
     public static readonly IReadOnlySet<string> Shrinkable = new HashSet<string> { "jpeg", "png", "webp", "avif" };
+
+    /// <summary>회전·반전을 지원하는 형식 (같은 형식으로 다시 저장). GIF는 첫 프레임만 남으므로 뺀다.</summary>
+    public static readonly IReadOnlySet<string> Transformable = new HashSet<string> { "jpeg", "png", "webp", "avif", "tiff" };
 
     private const int ShrinkMaxSide = 2560;
 
@@ -125,6 +131,43 @@ public static class FileTools
             "webp" => sized.WebpsaveBuffer(q: 80, keep: Enums.ForeignKeep.None),
             "avif" => sized.HeifsaveBuffer(q: 50, compression: Enums.ForeignHeifCompression.Av1, keep: Enums.ForeignKeep.None),
             _ => sized.PngsaveBuffer(compression: 9, palette: true, keep: Enums.ForeignKeep.None),
+        };
+        File.WriteAllBytes(part, buffer);
+        File.Move(part, dest);
+        return dest;
+    }
+
+    /// <summary>
+    /// 이미지를 돌리거나 뒤집어 같은 형식으로 저장한다. 결과는 <c>이름_rotated.확장자</c> 또는 <c>이름_flipped.확장자</c>.
+    /// EXIF 회전을 먼저 적용하므로 사진은 눈에 보이는 방향을 기준으로 돌아간다.
+    /// </summary>
+    public static string Transform(string path, ImageTransform transform)
+    {
+        var format = Formats.Detect(path);
+        if (!Transformable.Contains(format)) throw new NotSupportedException($"{format}은 회전·반전을 지원하지 않습니다");
+        var full = Path.GetFullPath(path);
+        var suffix = transform is ImageTransform.FlipHorizontal or ImageTransform.FlipVertical ? "flipped" : "rotated";
+        var dest = OutputWriter.UniquePath(Path.Combine(Path.GetDirectoryName(full)!,
+            $"{Path.GetFileNameWithoutExtension(full)}_{suffix}.{Formats.FileExtension(format)}"));
+        var part = dest + ".part";
+
+        using var image = ImageConverter.Load(full);
+        using var upright = image.Autorot();
+        using var result = transform switch
+        {
+            ImageTransform.RotateRight => upright.Rot(Enums.Angle.D90),
+            ImageTransform.RotateLeft => upright.Rot(Enums.Angle.D270),
+            ImageTransform.Rotate180 => upright.Rot(Enums.Angle.D180),
+            ImageTransform.FlipHorizontal => upright.Flip(Enums.Direction.Horizontal),
+            _ => upright.Flip(Enums.Direction.Vertical),
+        };
+        var buffer = format switch
+        {
+            "jpeg" => result.JpegsaveBuffer(q: 95),
+            "webp" => result.WebpsaveBuffer(q: 95),
+            "avif" => result.HeifsaveBuffer(q: 70, compression: Enums.ForeignHeifCompression.Av1),
+            "tiff" => result.TiffsaveBuffer(),
+            _ => result.PngsaveBuffer(),
         };
         File.WriteAllBytes(part, buffer);
         File.Move(part, dest);

@@ -261,7 +261,7 @@ public partial class SettingsWindow : Window
     {
         var theme = PanelTheme.Get(kind);
         var current = _settings.Theme == kind;
-        const double w = 232, h = 150, cx = w / 2, cy = h / 2, outer = 66, ring = 41, bubble = 36;
+        const double w = 232, h = 150, cx = w / 2, cy = h / 2, outer = 66, hub = 18;
 
         var preview = new Canvas
         {
@@ -279,15 +279,16 @@ public partial class SettingsWindow : Window
             preview.Children.Add(e);
         }
         Put(PanelArt.Disc(theme, outer), cx, cy);
-        Put(PanelArt.Hub(theme, 8), cx, cy);
         PanelController.Tile[] tiles = [new("jpeg", "JPG"), new("png", "PNG"), new("pdf", "PDF"), new(PanelController.ZipTile, "ZIP")];
         for (var t = 0; t < tiles.Length; t++)
         {
-            var parts = PanelArt.Bubble(theme, tiles[t], bubble);
+            var step = 2 * Math.PI / tiles.Length;
+            var first = -Math.PI / 2 - step / 2;
+            var parts = PanelArt.Sector(theme, tiles[t], outer, hub + 2, outer, first + step * t, first + step * (t + 1), fontScale: 0.5);
             if (t == 0) parts.Highlight(theme, true); // 강조색도 보이게
-            var angle = -Math.PI / 2 + 2 * Math.PI * t / tiles.Length;
-            Put(parts.Root, cx + Math.Cos(angle) * ring, cy + Math.Sin(angle) * ring);
+            Put(parts.Root, cx, cy);
         }
+        Put(PanelArt.Hub(theme, hub), cx, cy);
 
         var content = new StackPanel();
         content.Children.Add(new Border { CornerRadius = new CornerRadius(10), ClipToBounds = true, Child = preview, Clip = new RectangleGeometry(new Rect(0, 0, w, h), 10, 10) });
