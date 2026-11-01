@@ -100,6 +100,71 @@ public class ToolsTests
         Assert.Equal("avif", Formats.Detect(avif));
     }
 
+    /// <summary>왼쪽 절반은 빨강, 오른쪽 절반은 파랑인 40×20 그림. 방향이 눈에 보이게 한다.</summary>
+    private static string MakeSplitPng(string dir, string name)
+    {
+        var path = Path.Combine(dir, name);
+        using var left = NetVips.Image.Black(20, 20, bands: 3).Linear([1, 1, 1], [255, 0, 0]);
+        using var right = NetVips.Image.Black(20, 20, bands: 3).Linear([1, 1, 1], [0, 0, 255]);
+        using var joined = left.Join(right, NetVips.Enums.Direction.Horizontal);
+        using var image = joined.Cast(NetVips.Enums.BandFormat.Uchar);
+        image.WriteToFile(path);
+        return path;
+    }
+
+    private static bool IsRed(NetVips.Image image, int x, int y) => image.Getpoint(x, y)[0] > 200;
+
+    [Theory]
+    [InlineData(ImageTransform.RotateRight, 20, 40, "a_rotated.png", 10, 5, true)]   // 시계 방향: 왼쪽이 위로
+    [InlineData(ImageTransform.RotateLeft, 20, 40, "a_rotated.png", 10, 5, false)]   // 반시계: 왼쪽이 아래로
+    [InlineData(ImageTransform.Rotate180, 40, 20, "a_rotated.png", 5, 10, false)]
+    [InlineData(ImageTransform.FlipHorizontal, 40, 20, "a_flipped.png", 5, 10, false)]
+    [InlineData(ImageTransform.FlipVertical, 40, 20, "a_flipped.png", 5, 10, true)]
+    public void Transform_turns_image_and_keeps_original(ImageTransform transform, int width, int height, string name, int x, int y, bool red)
+    {
+        using var dir = new TempDir();
+        var src = MakeSplitPng(dir.Path, "a.png");
+        var before = File.ReadAllBytes(src);
+
+        var dest = FileTools.Transform(src, transform);
+
+        Assert.Equal(name, Path.GetFileName(dest));
+        Assert.Equal(before, File.ReadAllBytes(src));
+        using var result = NetVips.Image.NewFromBuffer(File.ReadAllBytes(dest));
+        Assert.Equal((width, height), (result.Width, result.Height));
+        Assert.Equal(red, IsRed(result, x, y));
+    }
+
+    [Fact]
+    public void Transform_starts_from_what_exif_shows()
+    {
+        using var dir = new TempDir();
+        var src = Path.Combine(dir.Path, "photo.jpg");
+        using (var image = NetVips.Image.Black(40, 30, bands: 3).Linear([1, 1, 1], [10, 120, 200]).Cast(NetVips.Enums.BandFormat.Uchar))
+        using (var tagged = image.Mutate(m => m.Set(NetVips.GValue.GIntType, "orientation", 6)))
+            tagged.Jpegsave(src, q: 90);
+
+        // EXIF로 30×40으로 보이는 사진을 오른쪽으로 돌리면 40×30
+        using var result = NetVips.Image.NewFromBuffer(File.ReadAllBytes(FileTools.Transform(src, ImageTransform.RotateRight)));
+
+        Assert.Equal((40, 30), (result.Width, result.Height));
+        Assert.False(result.Contains("orientation") && (int)result.Get("orientation") > 1); // 이중 회전 방지
+    }
+
+    [Fact]
+    public void Transform_avoids_name_collision_and_rejects_gif()
+    {
+        using var dir = new TempDir();
+        var src = MakeSplitPng(dir.Path, "a.png");
+        FileTools.Transform(src, ImageTransform.Rotate180);
+
+        Assert.Equal("a_rotated (1).png", Path.GetFileName(FileTools.Transform(src, ImageTransform.Rotate180)));
+
+        var gif = Path.Combine(dir.Path, "b.gif");
+        using (var image = NetVips.Image.NewFromFile(src)) image.WriteToFile(gif);
+        Assert.Throws<NotSupportedException>(() => FileTools.Transform(gif, ImageTransform.Rotate180));
+    }
+
     [Fact]
     public void Sniff_media_signatures()
     {

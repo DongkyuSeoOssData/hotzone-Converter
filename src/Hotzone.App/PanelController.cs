@@ -12,6 +12,33 @@ public sealed class PanelController(ConverterRegistry registry)
     public const string ShrinkTile = "shrink";
     public const string ZipTile = "zip";
     public const string UnzipTile = "unzip";
+    public const string TransformGroup = "transform";
+
+    /// <summary>회전·반전 동작. 버블 대상 이름 → (동작, 알림에 쓰는 이름).</summary>
+    private static readonly Dictionary<string, (ImageTransform Transform, string Action)> Transforms = new()
+    {
+        ["rotate_right"] = (ImageTransform.RotateRight, "오른쪽 90° 회전"),
+        ["rotate_left"] = (ImageTransform.RotateLeft, "왼쪽 90° 회전"),
+        ["rotate_180"] = (ImageTransform.Rotate180, "180° 회전"),
+        ["flip_horizontal"] = (ImageTransform.FlipHorizontal, "좌우 반전"),
+        ["flip_vertical"] = (ImageTransform.FlipVertical, "상하 반전"),
+    };
+
+    /// <summary>"회전" 버블을 펼치면 나오는 버블들.</summary>
+    private static readonly Tile[] TransformTiles =
+    [
+        new("rotate_right", "오른쪽 90°"),
+        new("rotate_left", "왼쪽 90°"),
+        new("rotate_180", "180°"),
+        new("flip_horizontal", "좌우 반전"),
+        new("flip_vertical", "상하 반전"),
+    ];
+
+    public static ImageTransform? TransformFor(string target) =>
+        Transforms.TryGetValue(target, out var t) ? t.Transform : null;
+
+    public static string? TransformAction(string target) =>
+        Transforms.TryGetValue(target, out var t) ? t.Action : null;
 
     // 카테고리 기본 우선순위 (사용 빈도 재정렬은 Phase 2)
     private static readonly string[] TargetOrder =
@@ -21,7 +48,8 @@ public sealed class PanelController(ConverterRegistry registry)
     private const int SniffLimit = 5;
 
     /// <param name="Caption">버블 아래 작은 설명 (없으면 null).</param>
-    public record Tile(string Target, string Label, string? Caption = null);
+    /// <param name="Children">있으면 놓는 버블이 아니라, 위에 머물면 이 버블들로 펼쳐지는 묶음 버블.</param>
+    public record Tile(string Target, string Label, string? Caption = null, IReadOnlyList<Tile>? Children = null);
 
     public IReadOnlyList<Tile> TilesFor(IReadOnlyList<string> files)
     {
@@ -38,6 +66,7 @@ public sealed class PanelController(ConverterRegistry registry)
             if (MergeService.CanMerge(all)) tiles.Add(new Tile(MergeTile, "PDF", "합치기"));
             if (all.All(f => f == "pdf")) tiles.Add(new Tile(SplitTile, "PDF", "나누기"));
             if (all.All(FileTools.Shrinkable.Contains)) tiles.Add(new Tile(ShrinkTile, "용량", "줄이기"));
+            if (all.All(FileTools.Transformable.Contains)) tiles.Add(new Tile(TransformGroup, "회전", "반전", TransformTiles));
             if (all.All(f => f == "zip")) tiles.Add(new Tile(UnzipTile, "ZIP", "풀기"));
         }
         // 압축은 형식과 상관없이 항상 (폴더 포함)
