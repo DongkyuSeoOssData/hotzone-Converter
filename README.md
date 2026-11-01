@@ -138,4 +138,5 @@ public sealed class PdfRenderConverter : IConverter { ... }
 
 버전마다 바뀐 내용은 [CHANGELOG.md](CHANGELOG.md)에 있습니다.
 
+- [0.1.1에서 달라진 점](CHANGELOG.md#-011에서-달라진-점)
 - [0.1.0에서 달라진 점](CHANGELOG.md#-010에서-달라진-점)
