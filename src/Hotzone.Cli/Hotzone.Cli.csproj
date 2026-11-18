@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- 앱 폴더에 HotzoneConverter.exe와 나란히 hzc.exe로 배포한다 (같은 tools\ffmpeg를 쓴다) -->
+    <AssemblyName>hzc</AssemblyName>
+    <RootNamespace>Hotzone.Cli</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Hotzone.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Hotzone.Core\Hotzone.Core.csproj" />
+    <ProjectReference Include="..\Hotzone.Converters\Hotzone.Converters.csproj" />
+  </ItemGroup>
+</Project>
