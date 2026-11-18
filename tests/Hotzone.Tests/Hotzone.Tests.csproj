@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Hotzone.Core\Hotzone.Core.csproj" />
     <ProjectReference Include="..\..\src\Hotzone.Converters\Hotzone.Converters.csproj" />
+    <ProjectReference Include="..\..\src\Hotzone.Cli\Hotzone.Cli.csproj" />
   </ItemGroup>
 
 </Project>

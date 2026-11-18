@@ -25,6 +25,9 @@ $app = Join-Path $Out "HotzoneConverter"
 if (Test-Path $app) { Remove-Item $app -Recurse -Force }
 dotnet publish src/Hotzone.App -c Release -r win-x64 --self-contained true -o $app
 if ($LASTEXITCODE -ne 0) { throw "publish 실패" }
+# 명령줄 도구 hzc.exe를 같은 폴더에 (같은 DLL·tools\ffmpeg를 함께 쓴다)
+dotnet publish src/Hotzone.Cli -c Release -r win-x64 --self-contained true -o $app
+if ($LASTEXITCODE -ne 0) { throw "hzc publish 실패" }
 
 $tools = New-Item -ItemType Directory -Force (Join-Path $app "tools\ffmpeg")
 Copy-Item $ffmpeg $tools

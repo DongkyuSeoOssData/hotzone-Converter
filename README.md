@@ -72,6 +72,21 @@ Windows용 로컬 파일 변환 유틸리티. 탐색기에서 파일을 끌다�
 
 \* HEIC는 디코더가 없는 환경에서 변환이 실패할 수 있습니다.
 
+## 명령줄 (hzc)
+
+앱 폴더의 `hzc.exe`로 드래그 없이 같은 변환을 할 수 있습니다. 결과 규칙(원본 옆 새 파일, 이름 충돌 시 번호)도 같습니다.
+
+```
+hzc actions 사진.heic                 할 수 있는 변환·도구 보기
+hzc convert *.png --to webp           형식 변환 (와일드카드는 PowerShell에서 펼쳐서)
+hzc merge 1.jpg 2.jpg 3.pdf           PDF 하나로 합치기
+hzc rotate 사진.jpg --by right        회전 (right, left, 180)
+hzc zip 보고서 폴더                    ZIP 압축
+```
+
+`hzc help`로 전체 명령을, `--json`으로 기계가 읽기 쉬운 결과를 볼 수 있습니다. 종료 코드는 0 성공, 1 일부 실패, 2 잘못된 사용법입니다.
+Claude Code에서는 저장소의 `.claude/skills/hotzone-convert` 스킬이 이 도구로 파일을 변환합니다.
+
 ## 환경설정
 
 트레이 아이콘을 우클릭 → **환경설정…** (또는 아이콘 더블클릭)
