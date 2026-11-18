@@ -136,4 +136,27 @@ public class CliTests
         Assert.Equal(CliApp.Ok, code);
         Assert.EndsWith("--json.webp", stdout.Trim());
     }
+
+    [Fact]
+    public async Task Install_skill_copies_bundled_skill_into_claude_config()
+    {
+        using var dir = new TempDir();
+        var previous = Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR");
+        Environment.SetEnvironmentVariable("CLAUDE_CONFIG_DIR", dir.Path);
+        try
+        {
+            var (first, stdout, _) = await Run("install-skill");
+            var (again, _, _) = await Run("install-skill"); // 업데이트: 다시 설치해도 된다
+
+            Assert.Equal(CliApp.Ok, first);
+            Assert.Equal(CliApp.Ok, again);
+            var skill = Path.Combine(dir.Path, "skills", CliApp.SkillName, "SKILL.md");
+            Assert.Equal(Path.GetDirectoryName(skill), stdout.Trim());
+            Assert.Contains("name: hotzone-convert", File.ReadAllText(skill));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CLAUDE_CONFIG_DIR", previous);
+        }
+    }
 }
