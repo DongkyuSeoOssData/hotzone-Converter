@@ -10,6 +10,10 @@
     <InternalsVisibleTo Include="Hotzone.Tests" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Claude Code 스킬을 hzc 옆 skills\ 에 함께 배포한다 (hzc install-skill이 사용자 폴더로 복사) -->
+    <None Include="..\..\.claude\skills\hotzone-convert\SKILL.md" Link="skills\hotzone-convert\SKILL.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Hotzone.Core\Hotzone.Core.csproj" />
     <ProjectReference Include="..\Hotzone.Converters\Hotzone.Converters.csproj" />
   </ItemGroup>

@@ -85,7 +85,15 @@ hzc zip 보고서 폴더                    ZIP 압축
 ```
 
 `hzc help`로 전체 명령을, `--json`으로 기계가 읽기 쉬운 결과를 볼 수 있습니다. 종료 코드는 0 성공, 1 일부 실패, 2 잘못된 사용법입니다.
-Claude Code에서는 저장소의 `.claude/skills/hotzone-convert` 스킬이 이 도구로 파일을 변환합니다.
+### Claude Code에서 쓰기
+
+Claude Code에게 "이 PNG들 WebP로 바꿔줘", "PDF 합쳐줘"처럼 말로 맡길 수 있습니다. 앱 폴더에서 한 번만 실행하세요.
+
+```
+hzc install-skill
+```
+
+스킬이 `%USERPROFILE%\.claude\skills\hotzone-convert`에 설치되고, 이후 Claude Code가 파일 변환 요청에 `hzc`를 씁니다. 앱을 업데이트한 뒤 다시 실행하면 스킬도 새 버전으로 바뀝니다.
 
 ## 환경설정
 

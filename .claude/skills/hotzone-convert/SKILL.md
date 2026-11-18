@@ -24,7 +24,7 @@ description: Hotzone Converter의 명령줄 도구 hzc로 로컬 파일을 변�
 3. 흔한 설치 위치: `C:\Tools\HotzoneConverter\hzc.exe`
 4. 이 저장소 안에서 작업 중이면: `dotnet run --project src/Hotzone.Cli --` (빌드에 시간이 걸리므로 여러 번 쓸 거면 `dotnet build src/Hotzone.Cli -c Release` 후 `src/Hotzone.Cli/bin/Release/net8.0/hzc` 사용)
 
-못 찾으면 사용자에게 [Releases](https://github.com/DongkyuSeoOssData/hotzone-Converter/releases/latest)에서 `hzc.exe`가 들어 있는 버전(0.2.0 다음 릴리스부터)을 받아 설치하라고 안내하고 멈춘다.
+못 찾으면 사용자에게 [Releases](https://github.com/DongkyuSeoOssData/hotzone-Converter/releases/latest)에서 0.3.0 이상을 받아 설치하라고 안내하고 멈춘다. 0.2.0 이하에는 `hzc.exe`가 없다. 앱 폴더는 있는데 `hzc.exe`만 없으면 구버전이니 업데이트를 안내한다.
 
 ## 2. 작업 순서
 

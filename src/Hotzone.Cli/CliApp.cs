@@ -52,6 +52,7 @@ public static class CliApp
           hzc zip <파일·폴더...>              ZIP 하나로 압축
           hzc unzip <ZIP...>                  압축 풀기
           hzc check                           FFmpeg·Office·LibreOffice 설치 여부
+          hzc install-skill                   Claude Code 스킬을 사용자 폴더(~/.claude/skills)에 설치
 
         옵션:
           --json      결과를 JSON으로 출력
@@ -104,6 +105,8 @@ public static class CliApp
         {
             case "check":
                 return Check(stdout, json);
+            case "install-skill":
+                return InstallSkill(stdout, stderr, json);
             case "actions":
                 return Actions(a.RequireFiles(), stdout, json);
             case "convert":
@@ -222,6 +225,44 @@ public static class CliApp
             stdout.WriteLine($"형식 변환 (convert --to): {(targets.Count == 0 ? "없음" : string.Join(", ", targets))}");
             if (lossy.Count > 0) stdout.WriteLine($"  텍스트 선택이 안 되는 결과: {string.Join(", ", lossy)}");
             stdout.WriteLine($"도구: {string.Join(", ", tools)}");
+        }
+        return Ok;
+    }
+
+    public const string SkillName = "hotzone-convert";
+
+    /// <summary>
+    /// hzc 옆에 함께 배포된 스킬(<c>skills\hotzone-convert</c>)을 Claude Code 사용자 스킬 폴더로 복사한다.
+    /// 대상: <c>%CLAUDE_CONFIG_DIR%\skills</c>, 없으면 <c>~/.claude/skills</c>. 이미 있으면 새 버전으로 바꾼다.
+    /// </summary>
+    private static int InstallSkill(TextWriter stdout, TextWriter stderr, bool json)
+    {
+        var source = Path.Combine(AppContext.BaseDirectory, "skills", SkillName);
+        if (!File.Exists(Path.Combine(source, "SKILL.md")))
+        {
+            stderr.WriteLine($"실패: 함께 배포된 스킬 파일이 없습니다: {source}");
+            return Failed;
+        }
+        var config = Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR") is { Length: > 0 } dir
+            ? dir
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude");
+        var dest = Path.Combine(config, "skills", SkillName);
+        try
+        {
+            Directory.CreateDirectory(dest);
+            foreach (var file in Directory.GetFiles(source))
+                File.Copy(file, Path.Combine(dest, Path.GetFileName(file)), overwrite: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            stderr.WriteLine($"실패: {ex.Message}");
+            return Failed;
+        }
+        if (json) stdout.WriteLine(JsonSerializer.Serialize(new { ok = true, installed = dest }, Json));
+        else
+        {
+            stdout.WriteLine(dest);
+            stderr.WriteLine("설치했습니다. Claude Code를 새로 열면 파일 변환 요청에 이 스킬을 씁니다.");
         }
         return Ok;
     }
